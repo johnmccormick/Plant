@@ -24,7 +24,6 @@ var paddingTop;
 
 var paused = false;
 var gameOver = false;
-var flicker = -1;
 
 $(document).ready(function() {
 
