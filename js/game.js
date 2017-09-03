@@ -520,8 +520,8 @@ function writeText(txt, sze, x, y, colour) {
 }
 
 var map = {
-  cols: 24,	//12
-  rows: 25, //23
+  cols: 24,
+  rows: 25,
   tsize: 32,
   tiles: [
 	-1, -1, -1, -1, -1, 10, 3, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3, 3, 4, -1, -1, -1, -1, -1, 
