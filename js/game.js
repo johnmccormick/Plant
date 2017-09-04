@@ -13,7 +13,7 @@ var entrance = {};
 var exit = {};
 
 var friction = 0.8;
-var speed = 1.5;
+var speed = 2;
 
 var mainAnimation;
 
@@ -29,6 +29,8 @@ var fontSize;
 
 var paused = false;
 var gameOver = false;
+
+var editor = false;
 
 $(document).ready(function() {
 
@@ -73,10 +75,20 @@ function setup() {
 			if (!paused) {
 				paused = true;
 				window.cancelAnimationFrame(mainAnimation);
-				writeText("Paused", 20, 160, 250);
+				writeText("Paused", 20, (canvasWidth / 2), (canvasHeight / 2), true);
 			} else {
 				paused = false;
 				mainAnimation = window.requestAnimationFrame(main);
+			}
+		}
+
+		if (keys[115]) {
+			if (!editor) {
+				editor = true;
+				canvas3.style.cursor = "crosshair";
+			} else {
+				editor = false;
+				canvas3.style.cursor = "none";
 			}
 		}
 
@@ -90,7 +102,7 @@ function setup() {
 		resizeWindow();
 	}
 
-	player.size = 10
+	player.size = 10;
 
 	player.velX = 0;
 	player.velY = 0;
@@ -201,9 +213,11 @@ function main() {
 	context1.clearRect(0, 0, canvasWidth, canvasHeight);
 	context2.clearRect(0, 0, canvasWidth, canvasHeight);
 
-	drawScene();
-
 	movePlayer();
+
+	drawScene();
+	drawPoint();
+
 
 	drawPlayer();
 
@@ -222,36 +236,6 @@ function main() {
 
 }
 
-function drawScene() {
-
-	
-	context3.fillStyle = "#243147";
-	context3.fillRect(0, 0, window.innerWidth, window.innerHeight);
-	context3.clearRect(paddingLeft, paddingTop, canvasWidth, canvasHeight);
-	
-
-	for (var c = 0; c < map.cols; c++) {
-		for (var r = 0; r < map.rows; r++) {
-
-			var tile = map.getTile(c, r);
-
-			var x = (c * map.tsize) - player.x + (canvasWidth / 2);
-			var y = (r * map.tsize) - player.y + (canvasHeight / 2);
-
-			if (tile > 1) {		
-
-				context1.drawImage(tiles[tile], x, y);
-
-			} else if (tile > -1) {
-
-				context1.fillStyle = "#FF69B4";
-				context1.fillRect(x, y, map.tsize, map.tsize);
-
-			}
-
-		}
-	}
-}
 
 function movePlayer() {
 
@@ -309,6 +293,71 @@ function movePlayer() {
 		dy = mouseY - canvasHeight / 2;
 		player.angle = Math.atan2(dy, dx);
 	} 
+
+}
+
+
+function drawScene() {
+
+	//Cuts screen from black border if canvas width is set to be smaller than window size
+	context3.fillStyle = "#243147";
+	context3.fillRect(0, 0, window.innerWidth, window.innerHeight);
+	context3.clearRect(paddingLeft, paddingTop, canvasWidth, canvasHeight);
+	
+
+	for (var c = 0; c < map.cols; c++) {
+		for (var r = 0; r < map.rows; r++) {
+
+			var tile = map.getTile(c, r);
+
+			var x = (c * map.tsize) - player.x + (canvasWidth / 2);
+			var y = (r * map.tsize) - player.y + (canvasHeight / 2);
+
+			if (tile > 1) {		
+
+				context1.drawImage(tiles[tile], x, y);
+
+			} else if (tile > -1) {
+
+				context1.fillStyle = "#FF69B4";
+				context1.fillRect(x, y, map.tsize, map.tsize);
+
+			}
+
+		}
+	}
+
+	if (editor) {
+		writeText("Grid view mode", 15, 10, 20, 'black');
+	}
+}
+
+
+function drawPoint() {
+
+	var x = mouseX;
+	var y = mouseY;
+
+	if (editor) {
+
+		var relativeX = (mouseX - (canvasWidth / 2) + player.x);
+		var relativeY = (mouseY - (canvasHeight / 2) + player.y);
+
+		var newX = (Math.round((relativeX) / map.tsize) * map.tsize); 
+		x = (newX + (canvasWidth / 2) - player.x);
+
+		var newY = (Math.round((relativeY) / map.tsize) * map.tsize); ;
+		y = (newY + (canvasHeight / 2) - player.y);
+
+		var xCoor = (Math.round(relativeX / map.tsize));
+		var yCoor = (Math.round(relativeY / map.tsize));
+
+		writeText("( " + xCoor + ", " + yCoor + " )", 10, x, y-10);
+		
+	}
+
+	context2.fillStyle = "black";
+	context3.fillRect(x, y, 5, 5); 
 
 }
 
@@ -390,6 +439,7 @@ function detectWallCollisionsX(x, y) {
 	}
 }
 
+
 function detectWallCollisionsY(x, y) {
 	for (var c = 0; c < map.cols; c++) {
 		for (var r = 0; r < map.rows; r++) {
@@ -428,6 +478,7 @@ function detectWallCollisionsY(x, y) {
 	}
 }
 
+
 function drawPlayer() {
 
 	context2.save();
@@ -438,6 +489,7 @@ function drawPlayer() {
 	context2.restore();
 	
 }
+
 
 function moveEnemies() {
 	for (var i = 0; i < enemy.length; i++) {
@@ -466,7 +518,8 @@ function drawEnemies() {
 
 			context2.fillStyle = "#000000";
 			context2.beginPath();
-			context2.arc(x, y, player.size, 0, 2*Math.PI);
+			context2.fillRect(x - (player.size / 2), y - (player.size / 2), player.size, player.size); // fill in the pixel at (10,10)
+			//context2.arc(x, y, player.size, 0, 2*Math.PI);
 			context2.fill();
 
 			context2.fillStyle = 'rgba(255, 0, 0, 0.7)';
@@ -526,7 +579,7 @@ function gameOverText(string, colour) {
 
     var w = context3.measureText(string).width;
 
-	writeText(string, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour);    
+	writeText(string, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour, true);    
 
 	//writeText(s, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour);
 	//writeText(s, fontSize, (Math.random() * (canvasWidth)) - w/2, (Math.random() * (canvasHeight)) + w/10, colour);
@@ -552,16 +605,21 @@ function toRadians(deg) {
 	return deg * Math.PI / 180
 }
 
-function writeText(txt, sze, x, y, colour) {
+
+function writeText(txt, sze, x, y, colour, outline) {
 	context3.font = sze + "px tahoma";
 	if (!colour) { colour = "#FFFFFF"; }
 	context3.fillStyle = colour;
 	context3.fillText(txt, x, y);
 
-	context3.lineWidth = 1;
-	context3.strokeStyle = "#ffffff";
-	context3.strokeText(txt, x, y);
+	if (outline) { 
+		context3.lineWidth = 1;
+		context3.strokeStyle = "#ffffff";
+		context3.strokeText(txt, x, y); 
+	}
+
 }
+
 
 var map = {
   cols: 24,

@@ -6,4 +6,5 @@ body {
 canvas {
 	position: absolute;
     display: block;
+    cursor: none;
 }
