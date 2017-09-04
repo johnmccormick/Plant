@@ -3,6 +3,9 @@ var context; 		// Canvas context
 var height; 		// Canvas height
 var width; 		// Canvas width
 
+var canvasWidth;
+var canvasHeight;
+
 var player = {};	// Will hold player coords
 var enemy = {};
 
@@ -22,6 +25,8 @@ var tiles = [];
 var paddingLeft;
 var paddingTop;
 
+var fontSize;
+
 var paused = false;
 var gameOver = false;
 
@@ -29,10 +34,9 @@ $(document).ready(function() {
 
 	setup();
 
-	loadTiles();
-	drawScene();
-	
-	main();
+	if (load()) {
+		main();
+	}
 
 });
 
@@ -40,19 +44,20 @@ function setup() {
 	//Set up canvas, context and width/height
 	canvas1 = document.getElementById("canvas1");
 	canvas2 = document.getElementById("canvas2");
+	canvas3 = document.getElementById("canvas3");
 
 	context1 = canvas1.getContext('2d');
 	context2 = canvas2.getContext('2d');
+	context3 = canvas3.getContext('2d');
+
+	//Sets canvasWidth/Height and padding
+	resizeWindow();
 
 	width = map.cols * map.tsize;
-	canvas1.width = width;
-	canvas2.width = width;
 
 	height = map.rows * map.tsize;
-	canvas1.height = height;
-	canvas2.height = height
 
-	centerCanvas();
+	fontSize = 50;
 
 	//Mouse events
 	document.onmousemove = function(event) {	
@@ -82,13 +87,15 @@ function setup() {
 	});
 
 	window.onresize = function() {
-		centerCanvas();
+		resizeWindow();
 	}
 
 	player.size = 10
 
 	player.velX = 0;
 	player.velY = 0;
+
+	player.angle = 0;
 
 	player.img = new Image();
 	player.img.src = "images/Raiden.png";
@@ -142,66 +149,59 @@ function setup() {
 	player.x = (entrance.x1 + (entrance.x2 - entrance.x1) / 2);
 	player.y = (entrance.y1 + (entrance.y2 - entrance.y1) / 2);
 
-	
 }
 
-function centerCanvas() {
-	paddingLeft = ((window.innerWidth/2)-(width/2)-$('#canvas2').offset().left);
-	paddingTop = ((window.innerHeight/2)-(height/2)-$('#canvas2').offset().top);
+function resizeWindow() {
+
+	canvasWidth = window.innerWidth - $('#canvas2').offset().left;
+	canvasHeight = window.innerHeight - $('#canvas2').offset().top;
+
+	canvas1.width = canvasWidth;
+	canvas2.width = canvasWidth;
+	canvas3.width = window.innerWidth;
+
+	canvas1.height = canvasHeight;
+	canvas2.height = canvasHeight;
+	canvas3.height = window.innerHeight;
+
+	paddingLeft = ((window.innerWidth/2)-(canvasWidth/2)-$('#canvas2').offset().left);
+	paddingTop = ((window.innerHeight/2)-(canvasHeight/2)-$('#canvas2').offset().top);
 
 	canvas1.style.paddingLeft = paddingLeft + "px";
 	canvas2.style.paddingLeft = paddingLeft + "px";
 
 	canvas1.style.paddingTop = paddingTop + "px";
 	canvas2.style.paddingTop = paddingTop + "px";
-}
-
-function loadTiles() {
-		var tilenames = ["Entrance", "Exit", "Floor", "Wall_T", "Wall_TR", "Wall_R", "Wall_BR", "Wall_B", "Wall_BL", "Wall_L", "Wall_TL", "Wall_BLC", "Wall_TLC", "Wall_TRC", "Wall_BRC"];
-		for (var i = 0; i < tilenames.length; i++) {
-			var src = "images/" + tilenames[i] + ".png";
-			tiles.push(src);
-		}
 
 }
 
-function drawScene() {
-	//Background
-	//context1.fillStyle = "#dddddd";
-	//context1.fillRect(0, 0, width, height);
+function load() {
+	var tilenames = ["Entrance", "Exit", "Floor", "Wall_T", "Wall_TR", "Wall_R", "Wall_BR", "Wall_B", "Wall_BL", "Wall_L", "Wall_TL", "Wall_BLC", "Wall_TLC", "Wall_TRC", "Wall_BRC"];
+	var readyIndex = 0; 
 
-	for (var c = 0; c < map.cols; c++) {
-		for (var r = 0; r < map.rows; r++) {
+	for (var i = 0; i < tilenames.length; i++) {
+		var src = "images/" + tilenames[i] + ".png";
 
-			var tile = map.getTile(c, r);
+		var imageObject = new Image();
+		imageObject.src = src;
 
-			if (tile > 1) {
-			
-				drawTile(tile, c * map.tsize, r * map.tsize)
-
-			} else if (tile > -1) {
-
-				context1.fillStyle = "#FF69B4";
-				context1.fillRect(c * map.tsize, r * map.tsize, map.tsize, map.tsize);
-
-			}
-		}
+		tiles[i] = imageObject;
+		tiles[i].onload = readyIndex++;
 	}
-}
 
-function drawTile(tile, c, r) {
-	var img = new Image();
-	img.src = tiles[tile];
+	if (readyIndex >= tiles.length) {
+		return true;
+	}
 
-	img.onload = (function() {
-		context1.drawImage(img, c, r);
-	})
 }
 
 
 function main() {
 
-	context2.clearRect(0, 0, width, height);
+	context1.clearRect(0, 0, canvasWidth, canvasHeight);
+	context2.clearRect(0, 0, canvasWidth, canvasHeight);
+
+	drawScene();
 
 	movePlayer();
 
@@ -212,11 +212,9 @@ function main() {
 
 	if (detectEnemyCollisions()) {
 		gameOverText("MISSION FAILED", "red");
-		//writeText("Mission Failed", 100, 100, 200);
 		gameOver = true;
 	} else if (atFinish()) {
-		gameOverText("MISSION FAILED", "green");
-		//writeText("MISSION COMPLETE", 100, 100, 200);
+		gameOverText("MISSION COMPLETE", "green");
 		gameOver = true;
 	} else {
 		mainAnimation = window.requestAnimationFrame(main);	
@@ -224,32 +222,40 @@ function main() {
 
 }
 
-function gameOverText(string, colour) {
-    var a = string.split(""),
-        n = a.length;
+function drawScene() {
 
-    for(var i = n - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
-    }
+	
+	context3.fillStyle = "#243147";
+	context3.fillRect(0, 0, window.innerWidth, window.innerHeight);
+	context3.clearRect(paddingLeft, paddingTop, canvasWidth, canvasHeight);
+	
 
-    var s = a.join("");
+	for (var c = 0; c < map.cols; c++) {
+		for (var r = 0; r < map.rows; r++) {
 
-    context2.clearRect(0, 0, width, height);
+			var tile = map.getTile(c, r);
 
-    drawPlayer(); 
-   	drawEnemies();
+			var x = (c * map.tsize) - player.x + (canvasWidth / 2);
+			var y = (r * map.tsize) - player.y + (canvasHeight / 2);
 
-	writeText(s, 50, (Math.random() * (width / 2)), (Math.random() * (height / 1.5)) + height / 10, colour);
+			if (tile > 1) {		
 
-	var gameOverTimeout = setTimeout(function(){ gameOverText(string, colour); }, 250);
+				context1.drawImage(tiles[tile], x, y);
 
+			} else if (tile > -1) {
+
+				context1.fillStyle = "#FF69B4";
+				context1.fillRect(x, y, map.tsize, map.tsize);
+
+			}
+
+		}
+	}
 }
 
-
 function movePlayer() {
+
+	//Set velocity based on key press
 	if (keys[87]) {
 		if (player.velY > -speed) {
 			player.velY--;
@@ -274,31 +280,40 @@ function movePlayer() {
 		}
 	}
 
-
+	//Multiply by friction constant
 	player.velX *= friction;
 	player.velY *= friction;
 
+	//Calculate new player coordinate based on velocity
 	var newX = player.x + player.velX;
 	var newY = player.y + player.velY;
 
-
+	//If collisions along X-axis, set x velocity to zero
 	if (detectWallCollisionsX(newX, player.y)) {
 		player.velX = 0;
 	}
 
+	//If collisions along Y-axis, set y velocity to zero
 	if (detectWallCollisionsY(player.x, newY)) {
 		player.velY = 0;
 	}
 	
-
+	//Add velocity to player position
 	player.x += player.velX;
 	player.y += player.velY;
+
+
+	//Calculate player's angle depending on mouse position
+	if (mouseX || mouseY) {
+		dx = mouseX - canvasWidth / 2;
+		dy = mouseY - canvasHeight / 2;
+		player.angle = Math.atan2(dy, dx);
+	} 
+
 }
 
 
 function detectWallCollisions(x, y) {
-
-
 	for (var c = 0; c < map.cols; c++) {
 		for (var r = 0; r < map.rows; r++) {
 
@@ -312,8 +327,8 @@ function detectWallCollisions(x, y) {
 
 		}
 	}
-
 }
+
 
 function intersects(x, y, c, r) {
 		var tileSize = map.tsize;
@@ -334,6 +349,7 @@ function intersects(x, y, c, r) {
 
 	    return (cornerDistance_sq <= (player.size^2));
 }
+
 
 function detectWallCollisionsX(x, y) {
 	for (var c = 0; c < map.cols; c++) {
@@ -414,24 +430,13 @@ function detectWallCollisionsY(x, y) {
 
 function drawPlayer() {
 
-	if (mouseX || mouseY) {
-		dx = mouseX - player.x;
-		dy = mouseY - player.y;
-		angle = Math.atan2(dy, dx);
-	} else {
-		angle = Math.PI / -2
-	}
-
 	context2.save();
-	context2.translate(player.x, player.y)
-	context2.rotate(angle);
+	context2.translate(canvasWidth / 2, canvasHeight / 2);
+	context2.rotate(player.angle);
 	context2.translate(- (map.tsize / 2),- (map.tsize / 2));
 	context2.drawImage(player.img, 0, 0);
 	context2.restore();
 	
-	x = player.x + (Math.cos(angle) * 10);
-	y = player.y + (Math.sin(angle) * 10);
-
 }
 
 function moveEnemies() {
@@ -449,6 +454,28 @@ function moveEnemies() {
 		} if (enemy[i].velY < 0) {
 			enemy[i].direction = 270
 		}
+	}	
+}
+
+
+function drawEnemies() {
+	for (var i = 0; i < enemy.length; i++) {
+
+			var x = enemy[i].x - player.x + (canvasWidth / 2);
+			var y = enemy[i].y - player.y + (canvasHeight / 2);
+
+			context2.fillStyle = "#000000";
+			context2.beginPath();
+			context2.arc(x, y, player.size, 0, 2*Math.PI);
+			context2.fill();
+
+			context2.fillStyle = 'rgba(255, 0, 0, 0.7)';
+			context2.beginPath();
+			var v = ((enemy[i].velY > 0) ? 1 : -1) * player.size;
+			context2.moveTo(x, y + v);
+			context2.arc(x, y + v, 150, toRadians(enemy[i].direction-enemy[i].fov/2), toRadians(enemy[i].direction+enemy[i].fov/2));
+			context2.lineTo(x, y + v);
+			context2.fill();
 	}	
 }
 
@@ -478,22 +505,36 @@ function detectEnemyCollisions() {
 	}
 }
 
-function drawEnemies() {
-	for (var i = 0; i < enemy.length; i++) {
-			context2.fillStyle = "#000000";
-			context2.beginPath();
-			context2.arc(enemy[i].x, enemy[i].y, player.size, 0, 2*Math.PI);
-			context2.fill();
 
-			context2.fillStyle = 'rgba(255, 0, 0, 0.7)';
-			context2.beginPath();
-			var v = ((enemy[i].velY > 0) ? 1 : -1) * player.size;
-			context2.moveTo(enemy[i].x, enemy[i].y + v);
-			context2.arc(enemy[i].x, enemy[i].y + v, 150, toRadians(enemy[i].direction-enemy[i].fov/2), toRadians(enemy[i].direction+enemy[i].fov/2));
-			context2.lineTo(enemy[i].x, enemy[i].y + v);
-			context2.fill();
-	}	
+function gameOverText(string, colour) {
+
+	/*
+    var a = string.split(""),
+        n = a.length;
+
+    for(var i = n - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+
+    var s = a.join("");
+
+	var w = context3.measureText(s).width;
+    */
+
+    var w = context3.measureText(string).width;
+
+	writeText(string, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour);    
+
+	//writeText(s, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour);
+	//writeText(s, fontSize, (Math.random() * (canvasWidth)) - w/2, (Math.random() * (canvasHeight)) + w/10, colour);
+
+	//var gameOverTimeout = setTimeout(function(){ gameOverText(string, colour); }, 25);
+
 }
+
 
 function atFinish () {
 		var playerTop = player.y - player.size;
@@ -507,16 +548,19 @@ function atFinish () {
 }
 
 
-
 function toRadians(deg) {
 	return deg * Math.PI / 180
 }
 
 function writeText(txt, sze, x, y, colour) {
-	context2.font = sze + "px tahoma";
+	context3.font = sze + "px tahoma";
 	if (!colour) { colour = "#FFFFFF"; }
-	context2.fillStyle = colour;
-	context2.fillText(txt, x, y);
+	context3.fillStyle = colour;
+	context3.fillText(txt, x, y);
+
+	context3.lineWidth = 1;
+	context3.strokeStyle = "#ffffff";
+	context3.strokeText(txt, x, y);
 }
 
 var map = {
