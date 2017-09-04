@@ -6,6 +6,9 @@ var width; 		// Canvas width
 var canvasWidth;
 var canvasHeight;
 
+var viewWidth;
+var viewHeight;
+
 var player = {};	// Will hold player coords
 var enemy = {};
 
@@ -201,10 +204,9 @@ function main() {
 	context1.clearRect(0, 0, canvasWidth, canvasHeight);
 	context2.clearRect(0, 0, canvasWidth, canvasHeight);
 
-	drawScene();
-
 	movePlayer();
 
+	drawScene();
 	drawPlayer();
 
 	moveEnemies();
