@@ -268,36 +268,42 @@ function movePlayer() {
 
 	var keypresses = 0;
 	//Set velocity based on key press
+	//W
 	if (keys[87]) {
-		if (player.velY > -player.speed) {
 			dx += vx;
 			dy += vy;
 			keypresses++;
-		}
 	}
 
+	//A
 	if (keys[65]) {
-		if (player.velX > -player.speed) {
+			if (keypresses) {
+			dx += vy * 1.5;
+			dy += -vx * 1.5;
+			} else {
 			dx += vy;
 			dy += -vx;
+			}
 			keypresses++;
-		}
 	}
 
+	//S
 	if (keys[83]) {
-		if (player.velY < player.speed) {
 			dx += -vx;
 			dy += -vy;
 			keypresses++;
-		}
 	}
 
+	//D
 	if (keys[68]) {
-		if (player.velX < player.speed) {
-			dx += -vy;
-			dy += vx;
-			keypresses++;
+		if (keypresses) {
+		dx += -vy * 1.5;
+		dy += vx * 1.5;
+		} else {
+		dx += -vy;
+		dy += vx;
 		}
+		keypresses++;
 	}
 
 	if (keypresses > 0) {
