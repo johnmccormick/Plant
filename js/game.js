@@ -1,19 +1,16 @@
-var context; 		// Canvas context
-
-var height; 		// Canvas height
-var width; 		// Canvas width
-
 var canvasWidth;
 var canvasHeight;
 
-var player = {};	// Will hold player coords
+var mapWidth;
+var mapHeight;
+
+var player = {};
 var enemy = {};
 
 var entrance = {};
 var exit = {};
 
 var friction = 0.8;
-var speed = 2;
 
 var mainAnimation;
 
@@ -52,12 +49,11 @@ function setup() {
 	context2 = canvas2.getContext('2d');
 	context3 = canvas3.getContext('2d');
 
+	mapWidth = (map.cols * map.tsize);
+	mapHeight = (map.rows * map.tsize);
+
 	//Sets canvasWidth/Height and padding
 	resizeWindow();
-
-	width = map.cols * map.tsize;
-
-	height = map.rows * map.tsize;
 
 	fontSize = 50;
 
@@ -103,6 +99,8 @@ function setup() {
 	}
 
 	player.size = 10;
+
+	player.speed = 2;
 
 	player.velX = 0;
 	player.velY = 0;
@@ -213,27 +211,31 @@ function main() {
 	context1.clearRect(0, 0, canvasWidth, canvasHeight);
 	context2.clearRect(0, 0, canvasWidth, canvasHeight);
 
-	movePlayer();
+	if (!gameOver) {
+		movePlayer();
+		moveEnemies();
+	}
 
 	drawScene();
+	
 	drawPoint();
-
 
 	drawPlayer();
 
-	moveEnemies();
 	drawEnemies();
-
+	
 	if (detectEnemyCollisions()) {
-		gameOverText("MISSION FAILED", "red");
+		writeText("Mission Failed", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 10), "red", true); 
 		gameOver = true;
-	} else if (atFinish()) {
-		gameOverText("MISSION COMPLETE", "green");
+	}
+	if (atExit()) {
+		writeText("Mission Accomplished", 50, paddingLeft + (canvasWidth / 25), paddingTop + (canvasHeight / 10), "green", true); 
 		gameOver = true;
-	} else {
-		mainAnimation = window.requestAnimationFrame(main);	
 	}
 
+
+	mainAnimation = requestAnimationFrame(main);	
+	
 }
 
 
@@ -241,25 +243,25 @@ function movePlayer() {
 
 	//Set velocity based on key press
 	if (keys[87]) {
-		if (player.velY > -speed) {
+		if (player.velY > -player.speed) {
 			player.velY--;
 		}
 	}
 
 	if (keys[65]) {
-		if (player.velX > -speed) {
+		if (player.velX > -player.speed) {
 			player.velX--;
 		}
 	}
 
 	if (keys[83]) {
-		if (player.velY < speed) {
+		if (player.velY < player.speed) {
 			player.velY++;
 		}
 	}
 
 	if (keys[68]) {
-		if (player.velX < speed) {
+		if (player.velX < player.speed) {
 			player.velX++;
 		}
 	}
@@ -328,7 +330,10 @@ function drawScene() {
 	}
 
 	if (editor) {
-		writeText("Grid view mode", 15, 10, 20, 'black');
+		context2.fillStyle = "grey";
+		context2.fillRect(3, 10, 120, 28);
+		context2.strokeRect(3, 10, 120, 28);
+		writeText("Grid view mode", 15, 10, 30, 'black');
 	}
 }
 
@@ -418,7 +423,7 @@ function detectWallCollisionsX(x, y) {
 				var playerLeft = x - player.size;
 				var playerRight = x + player.size;
 
-				if ((playerLeft < 0) || (playerRight > width)) {
+				if ((playerLeft < 0) || (playerRight > mapWidth)) {
 					return true;
 				}
 
@@ -458,7 +463,7 @@ function detectWallCollisionsY(x, y) {
 				var playerLeft = x - player.size;
 				var playerRight = x + player.size;
 
-				if ((playerTop < 0) || (playerBottom > height)) {
+				if ((playerTop < 0) || (playerBottom > mapHeight)) {
 					return true;
 				}
 
@@ -558,38 +563,7 @@ function detectEnemyCollisions() {
 	}
 }
 
-
-function gameOverText(string, colour) {
-
-	/*
-    var a = string.split(""),
-        n = a.length;
-
-    for(var i = n - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
-    }
-
-    var s = a.join("");
-
-	var w = context3.measureText(s).width;
-    */
-
-    var w = context3.measureText(string).width;
-
-	writeText(string, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour, true);    
-
-	//writeText(s, fontSize, paddingLeft + (canvasWidth / 2) - w * 2.4, paddingTop + (canvasHeight / 2) + w/10, colour);
-	//writeText(s, fontSize, (Math.random() * (canvasWidth)) - w/2, (Math.random() * (canvasHeight)) + w/10, colour);
-
-	//var gameOverTimeout = setTimeout(function(){ gameOverText(string, colour); }, 25);
-
-}
-
-
-function atFinish () {
+function atExit () {
 		var playerTop = player.y - player.size;
 		var playerBottom = player.y + player.size;
 		var playerLeft = player.x - player.size;
@@ -614,7 +588,7 @@ function writeText(txt, sze, x, y, colour, outline) {
 
 	if (outline) { 
 		context3.lineWidth = 1;
-		context3.strokeStyle = "#ffffff";
+		context3.strokeStyle = "#000000";
 		context3.strokeText(txt, x, y); 
 	}
 
