@@ -98,12 +98,12 @@ function setup() {
 
 	player.size = 10;
 
-	player.speed = 2;
+	player.speed = 3;
 
 	player.velX = 0;
 	player.velY = 0;
 
-	player.angle = 0;
+	player.direction = 0;
 
 	player.img = new Image();
 	player.img.src = "images/Raiden.png";
@@ -127,10 +127,6 @@ function setup() {
 			newWaypoints.splice(w, 1);
 
 	}
-
-
-
-
 
 	//Define entrance and exit areas
 	entrance.xtiles = [];
@@ -257,29 +253,57 @@ function main() {
 
 function movePlayer() {
 
+	//Calculate player's angle depending on mouse position
+	if (mouseX || mouseY) {
+		dx = mouseX - canvasWidth / 2;
+		dy = mouseY - canvasHeight / 2;
+		player.direction = Math.atan2(dy, dx);
+	} 
+
+	var vx = Math.cos(player.direction) * player.speed;
+	var vy = Math.sin(player.direction) * player.speed;
+
+	var dx = 0;
+	var dy = 0;
+
+	var keypresses = 0;
 	//Set velocity based on key press
 	if (keys[87]) {
 		if (player.velY > -player.speed) {
-			player.velY--;
+			dx += vx;
+			dy += vy;
+			keypresses++;
 		}
 	}
 
 	if (keys[65]) {
 		if (player.velX > -player.speed) {
-			player.velX--;
+			dx += vy;
+			dy += -vx;
+			keypresses++;
 		}
 	}
 
 	if (keys[83]) {
 		if (player.velY < player.speed) {
-			player.velY++;
+			dx += -vx;
+			dy += -vy;
+			keypresses++;
 		}
 	}
 
 	if (keys[68]) {
 		if (player.velX < player.speed) {
-			player.velX++;
+			dx += -vy;
+			dy += vx;
+			keypresses++;
 		}
+	}
+
+	if (keypresses > 0) {
+		//Multiply by friction constant
+		player.velX = dx / keypresses;
+		player.velY = dy / keypresses;
 	}
 
 	//Multiply by friction constant
@@ -303,14 +327,6 @@ function movePlayer() {
 	//Add velocity to player position
 	player.x += player.velX;
 	player.y += player.velY;
-
-
-	//Calculate player's angle depending on mouse position
-	if (mouseX || mouseY) {
-		dx = mouseX - canvasWidth / 2;
-		dy = mouseY - canvasHeight / 2;
-		player.angle = Math.atan2(dy, dx);
-	} 
 
 }
 
@@ -506,7 +522,7 @@ function drawPlayer() {
 
 	context2.save();
 	context2.translate(canvasWidth / 2, canvasHeight / 2);
-	context2.rotate(player.angle);
+	context2.rotate(player.direction);
 	context2.translate(- (map.tsize / 2),- (map.tsize / 2));
 	context2.drawImage(player.img, 0, 0);
 	context2.restore();
@@ -571,7 +587,6 @@ function drawEnemies() {
 			context2.fillStyle = "#000000";
 			context2.beginPath();
 			context2.fillRect(x - (player.size / 2), y - (player.size / 2), player.size, player.size); // fill in the pixel at (10,10)
-			//context2.arc(x, y, player.size, 0, 2*Math.PI);
 			context2.fill();
 
 			context2.fillStyle = 'rgba(255, 0, 0, 0.7)';
