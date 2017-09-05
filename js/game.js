@@ -5,7 +5,9 @@ var mapWidth;
 var mapHeight;
 
 var player = {};
+
 var enemy = {};
+var waypoints = [];
 
 var entrance = {};
 var exit = {};
@@ -25,9 +27,8 @@ var paddingTop;
 var fontSize;
 
 var paused = false;
-var gameOver = false;
-
 var editor = false;
+var gameOver = false;
 
 $(document).ready(function() {
 
@@ -70,11 +71,8 @@ function setup() {
  		if (keys[32] && gameOver == false) {
 			if (!paused) {
 				paused = true;
-				window.cancelAnimationFrame(mainAnimation);
-				writeText("Paused", 20, (canvasWidth / 2), (canvasHeight / 2), true);
 			} else {
 				paused = false;
-				mainAnimation = window.requestAnimationFrame(main);
 			}
 		}
 
@@ -110,16 +108,31 @@ function setup() {
 	player.img = new Image();
 	player.img.src = "images/Raiden.png";
 
-	enemy = [
-	{x: map.tsize * 6.5, y: (map.tsize * 3), direction: 180, fov: 90, sightRadius: 150, velX: 0, velY: 1.5},
-	{x: map.tsize * (map.cols-6.5), y: map. tsize * (map.rows-3), direction: 0, fov: 90, sightRadius: 150, velX: 0, velY: -1.5}
+	waypoints = [
+	[12, 6], [6, 11], [6, 20], [6, 11], [12, 9], [18, 11], [19, 17], [18, 11]
 	];
 
+	enemy = [
+	{direction: 0, x: 0, y: 0, velX: 0, velY: 0, fov: 90, sightRadius: 150},
+	{direction: 0, x: 0, y: 0, velX: 0, velY: 0, fov: 90, sightRadius: 150}
+	];
 
-	//define entrance and exit areas
-	function arrayMin(arr) { return Math.min.apply(Math, arr); };
-	function arrayMax(arr) { return Math.max.apply(Math, arr); };
+	var newWaypoints = waypoints.slice(0);
+	for (var i = 0; i < enemy.length; i++) {
+		var w = Math.floor(Math.random()*newWaypoints.length);
 
+			enemy[i].x = newWaypoints[w][0] * map.tsize;
+			enemy[i].y = newWaypoints[w][1] * map.tsize;
+			enemy[i].waypoint = w;
+			newWaypoints.splice(w, 1);
+
+	}
+
+
+
+
+
+	//Define entrance and exit areas
 	entrance.xtiles = [];
 	entrance.ytiles = [];
 	exit.xtiles = []
@@ -145,6 +158,9 @@ function setup() {
 		}
 	}
 
+	function arrayMin(arr) { return Math.min.apply(Math, arr); };
+	function arrayMax(arr) { return Math.max.apply(Math, arr); };
+
 	entrance.x1 = arrayMin(entrance.xtiles) * map.tsize;
 	entrance.y1 = arrayMin(entrance.ytiles) * map.tsize;
 	entrance.x2 = (arrayMax(entrance.xtiles) + 1) * map.tsize;
@@ -155,7 +171,7 @@ function setup() {
 	exit.x2 = (arrayMax(exit.xtiles) + 1) * map.tsize;
 	exit.y2 = (arrayMax(exit.ytiles) + 1) * map.tsize;
 
-
+	//Set player to center of entrance area
 	player.x = (entrance.x1 + (entrance.x2 - entrance.x1) / 2);
 	player.y = (entrance.y1 + (entrance.y2 - entrance.y1) / 2);
 
@@ -211,7 +227,7 @@ function main() {
 	context1.clearRect(0, 0, canvasWidth, canvasHeight);
 	context2.clearRect(0, 0, canvasWidth, canvasHeight);
 
-	if (!gameOver) {
+	if (!gameOver && !paused) {
 		movePlayer();
 		moveEnemies();
 	}
@@ -328,6 +344,8 @@ function drawScene() {
 
 		}
 	}
+
+	if (paused) { writeText("Paused", 20, (canvasWidth / 2), (canvasHeight / 2), true); }
 
 	if (editor) {
 		context2.fillStyle = "grey";
@@ -499,18 +517,45 @@ function drawPlayer() {
 function moveEnemies() {
 	for (var i = 0; i < enemy.length; i++) {
 
-		if ((enemy[i].y < map.tsize * 3) || (enemy[i].y > map.tsize * (map.rows-3))) { 
+		var w = [enemy[i].waypoint];
+
+		enemy[i].dx = (waypoints[w][0] * map.tsize) - enemy[i].x;
+		enemy[i].dy = (waypoints[w][1] * map.tsize) - enemy[i].y;
+
+		if (Math.abs(enemy[i].dx) < 1 && Math.abs(enemy[i].dy) < 1) {
+			if (enemy[i].waypoint + 1 == waypoints.length) { 
+				enemy[i].waypoint = 0; 
+			} else {
+				enemy[i].waypoint++;
+				moveEnemies();
+			}
+		}
+
+		context2.beginPath();
+		context2.moveTo(enemy[i].x - player.x + (canvasWidth / 2), enemy[i].y - player.y + (canvasHeight / 2));
+		context2.lineTo(enemy[i].x - player.x + (canvasWidth / 2) + enemy[i].dx, enemy[i].y - player.y + (canvasHeight / 2) + enemy[i].dy);
+		context2.stroke();
+
+		if (enemy[i].dy/enemy[i].dx) {
+			enemy[i].direction = Math.atan(enemy[i].dy/enemy[i].dx);
+		}
+
+		//Enemy speed = 2
+		enemy[i].velX = Math.cos(enemy[i].direction) * 1;
+		enemy[i].velY = Math.sin(enemy[i].direction) * 1;
+
+		if (enemy[i].dx < 0 || (enemy[i].dx < 0 && enemy[i].dy < 0)) {
+			enemy[i].direction += toRadians(180);	
+		}
+
+		if ((enemy[i].dx < 0 && enemy[i].dy > 0) || (enemy[i].dx < 0 && enemy[i].dy < 0)) {
+			enemy[i].velX *= -1;
 			enemy[i].velY *= -1;
 		}
 
 		enemy[i].x += enemy[i].velX;
 		enemy[i].y += enemy[i].velY;
 
-		if (enemy[i].velY > 0) {
-			enemy[i].direction = 90
-		} if (enemy[i].velY < 0) {
-			enemy[i].direction = 270
-		}
 	}	
 }
 
@@ -529,10 +574,10 @@ function drawEnemies() {
 
 			context2.fillStyle = 'rgba(255, 0, 0, 0.7)';
 			context2.beginPath();
-			var v = ((enemy[i].velY > 0) ? 1 : -1) * player.size;
-			context2.moveTo(x, y + v);
-			context2.arc(x, y + v, 150, toRadians(enemy[i].direction-enemy[i].fov/2), toRadians(enemy[i].direction+enemy[i].fov/2));
-			context2.lineTo(x, y + v);
+
+			context2.moveTo(x, y);
+			context2.arc(x, y, 150, enemy[i].direction-toRadians(enemy[i].fov/2), enemy[i].direction+toRadians(enemy[i].fov/2));
+			context2.lineTo(x, y);
 			context2.fill();
 	}	
 }
@@ -540,23 +585,24 @@ function drawEnemies() {
 
 function detectEnemyCollisions() {
 	for (var i = 0; i < enemy.length; i++) {
-		
-		//FOV-Enemy Vector
-		//Vector 1 = (fovX, fovY), Vector 2 = (-fovX, fovY)
-		var fovX = Math.cos(toRadians(enemy[i].direction - (enemy[i].fov/2))) * enemy[i].sightRadius;
-		var fovY = Math.sin(toRadians(enemy[i].direction - (enemy[i].fov/2))) * enemy[i].sightRadius;
 
-		//Player-Enemy Vector
-		var v = ((enemy[i].velY > 0) ? 1 : -1) * player.size;
-		var pVX = player.x - (enemy[i].x + v);
-		var pVY = player.y - (enemy[i].y + v);
+		//FOV vectors
+		var fovX1 = Math.cos(enemy[i].direction - toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
+		var fovY1 = Math.sin(enemy[i].direction - toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
+		var fovX2 = Math.cos(enemy[i].direction + toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
+		var fovY2 = Math.sin(enemy[i].direction + toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
 
-		//Counter Clockwise Normal of FOV vectors = dy, -dx == (fovY, -fovX) and (fovY, fovX)
+
+		//Player-enemy vector
+		var pVX = player.x - (enemy[i].x);
+		var pVY = player.y - (enemy[i].y);
+
+		//Counter Clockwise Normal of FOV vectors = dy, -dx
 		//Dot products of each Counter Clockwise Normal and Player-Enemy vector determines  
 		//whether player is CW or CCW to FOV vector. Positive value = CCW, Negative = CW.
 		//Code below tests whether player is within angle of FOV sector and radius of FOV circle.
-		if (((fovY * pVX) + (-fovX * pVY) < 0) && ((fovY * pVX) + (fovX * pVY) > 0)) {
-			if (Math.pow((player.x - enemy[i].x), 2) + Math.pow((player.y - enemy[i].y), 2) < Math.pow(enemy[i].sightRadius, 2)) {
+		if (((fovY1 * pVX) + (-fovX1 * pVY) < 0) && ((fovY2 * pVX) + (-fovX2 * pVY) > 0)) {
+			if (Math.pow(pVX, 2) + Math.pow(pVY, 2) < Math.pow(enemy[i].sightRadius, 2)) {
 				return true;
 			}	
 		}

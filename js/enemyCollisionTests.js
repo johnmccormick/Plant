@@ -1,4 +1,4 @@
-function enemyCollisionTestData () {
+function enemyCollisionTest () {
 	for (var i = 0; i < enemy.length; i++) {
 		
 		if (Math.pow((player.x - enemy[i].x), 2) + Math.pow((player.y - enemy[i].y), 2) < Math.pow(enemy[i].sightRadius, 2)) {
@@ -28,7 +28,7 @@ function enemyCollisionTestData () {
 		context2.moveTo(enemy[i].x, enemy[i].y);
 		context2.lineTo(enemy[i].x + fovX, enemy[i].y);
 		context2.lineTo(enemy[i].x + fovX, enemy[i].y + fovY);
-		ontext2.closePath();
+		context2.closePath();
 
 		//Draw Vector 2 angles
 		context2.lineTo(enemy[i].x - fovX, enemy[i].y);
@@ -69,6 +69,53 @@ function enemyCollisionTestData () {
 			if (Math.pow((player.x - enemy[i].x), 2) + Math.pow((player.y - enemy[i].y), 2) < Math.pow(enemy[i].sightRadius, 2)) {
 			console.log(i + "In fov");
 			}	
+		}
+	}
+}
+
+
+
+function displayEnemyCollisions() {
+
+	for (var j = 0; j < 5000; j++) {
+
+		var w = Math.random() * mapWidth;
+		var h = Math.random() * mapHeight;
+
+		for (var i = 0; i < enemy.length; i++) {		
+
+			//FOV-Enemy Vector
+			//Vector 1 = (fovX, fovY), Vector 2 = (-fovX, fovY)
+			var fovX = Math.cos(enemy[i].direction - toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
+			var fovY = Math.sin(enemy[i].direction - toRadians((enemy[i].fov/2))) * enemy[i].sightRadius;
+
+			//Player-Enemy Vector
+			//var v = ((enemy[i].velY > 0) ? 1 : -1) * player.size;
+			var pVX = w - (enemy[i].x);
+			var pVY = h - (enemy[i].y);
+
+			//Counter Clockwise Normal of FOV vectors = dy, -dx == (fovY, -fovX) and (fovY, fovX)
+			//Dot products of each Counter Clockwise Normal and Player-Enemy vector determines  
+			//whether player is CW or CCW to FOV vector. Positive value = CCW, Negative = CW.
+			//Code below tests whether player is within angle of FOV sector and radius of FOV circle.
+
+			w = w - player.x + (canvasWidth / 2);
+			h = h - player.y + (canvasHeight / 2)
+
+			if (((fovY * pVX) + (-fovX * pVY) < 0) && ((fovY * pVX) + (fovX * pVY) > 0)) {
+				if (Math.pow((player.x - enemy[i].x), 2) + Math.pow((player.y - enemy[i].y), 2) < Math.pow(enemy[i].sightRadius, 2)) {
+					context3.fillStyle = "white";
+					context3.fillRect(w, h, 2, 2);
+				} else {
+					context3.fillStyle = "blue";
+					context3.fillRect(w, h, 2, 2);	
+				} 
+			} else {
+				context3.fillStyle = "black";
+				context3.fillRect(w, h, 2, 2);
+			}
+
+		
 		}
 	}
 }
