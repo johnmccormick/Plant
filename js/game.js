@@ -349,9 +349,9 @@ function drawScene() {
 
 	if (editor) {
 		context2.fillStyle = "grey";
-		context2.fillRect(3, 10, 120, 28);
-		context2.strokeRect(3, 10, 120, 28);
-		writeText("Grid view mode", 15, 10, 30, 'black');
+		context2.fillRect(3, 5, 120, 28);
+		context2.strokeRect(3, 5, 120, 28);
+		writeText("Grid view mode", 15, 10, 24, 'black');
 	}
 }
 
@@ -531,18 +531,20 @@ function moveEnemies() {
 			}
 		}
 
+		/* Waypoint lines
 		context2.beginPath();
 		context2.moveTo(enemy[i].x - player.x + (canvasWidth / 2), enemy[i].y - player.y + (canvasHeight / 2));
 		context2.lineTo(enemy[i].x - player.x + (canvasWidth / 2) + enemy[i].dx, enemy[i].y - player.y + (canvasHeight / 2) + enemy[i].dy);
 		context2.stroke();
+		*/
 
 		if (enemy[i].dy/enemy[i].dx) {
 			enemy[i].direction = Math.atan(enemy[i].dy/enemy[i].dx);
 		}
 
-		//Enemy speed = 2
-		enemy[i].velX = Math.cos(enemy[i].direction) * 1;
-		enemy[i].velY = Math.sin(enemy[i].direction) * 1;
+		//Enemy speed = 1.5
+		enemy[i].velX = Math.cos(enemy[i].direction) * 1.5;
+		enemy[i].velY = Math.sin(enemy[i].direction) * 1.5;
 
 		if (enemy[i].dx < 0 || (enemy[i].dx < 0 && enemy[i].dy < 0)) {
 			enemy[i].direction += toRadians(180);	
