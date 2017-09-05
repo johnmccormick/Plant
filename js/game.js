@@ -241,11 +241,11 @@ function main() {
 	drawEnemies();
 	
 	if (detectEnemyCollisions()) {
-		writeText("Mission Failed", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 10), "red", true); 
+		writeText("Mission Failed", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 15), "red", true); 
 		gameOver = true;
 	}
 	if (atExit()) {
-		writeText("Mission Accomplished", 50, paddingLeft + (canvasWidth / 25), paddingTop + (canvasHeight / 10), "green", true); 
+		writeText("Mission Accomplished", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 15), "green", true); 
 		gameOver = true;
 	}
 
