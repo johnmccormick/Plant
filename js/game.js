@@ -267,23 +267,13 @@ function movePlayer() {
 	var dy = 0;
 
 	var keypresses = 0;
+	var ws = false;
 	//Set velocity based on key press
 	//W
 	if (keys[87]) {
 			dx += vx;
 			dy += vy;
-			keypresses++;
-	}
-
-	//A
-	if (keys[65]) {
-			if (keypresses) {
-			dx += vy * 1.5;
-			dy += -vx * 1.5;
-			} else {
-			dx += vy;
-			dy += -vx;
-			}
+			ws = true;
 			keypresses++;
 	}
 
@@ -291,18 +281,21 @@ function movePlayer() {
 	if (keys[83]) {
 			dx += -vx;
 			dy += -vy;
+			ws = true;
+			keypresses++;
+	}
+
+	//A
+	if (keys[65]) {
+			dx += vy;
+			dy += -vx;
 			keypresses++;
 	}
 
 	//D
 	if (keys[68]) {
-		if (keypresses) {
-		dx += -vy * 1.5;
-		dy += vx * 1.5;
-		} else {
 		dx += -vy;
 		dy += vx;
-		}
 		keypresses++;
 	}
 
@@ -315,6 +308,10 @@ function movePlayer() {
 	//Multiply by friction constant
 	player.velX *= friction;
 	player.velY *= friction;
+
+	//Add velocity to player position
+	player.velX = Math.round(player.velX * 100) / 100;
+	player.velY = Math.round(player.velY * 100) / 100;
 
 	//Calculate new player coordinate based on velocity
 	var newX = player.x + player.velX;
@@ -329,7 +326,7 @@ function movePlayer() {
 	if (detectWallCollisionsY(player.x, newY)) {
 		player.velY = 0;
 	}
-	
+
 	//Add velocity to player position
 	player.x += player.velX;
 	player.y += player.velY;
@@ -350,8 +347,8 @@ function drawScene() {
 
 			var tile = map.getTile(c, r);
 
-			var x = (c * map.tsize) - player.x + (canvasWidth / 2);
-			var y = (r * map.tsize) - player.y + (canvasHeight / 2);
+			var x = (c * map.tsize) - Math.round(player.x) + (canvasWidth / 2);
+			var y = (r * map.tsize) - Math.round(player.y) + (canvasHeight / 2);
 
 			if (tile > 1) {		
 
