@@ -109,7 +109,7 @@ function setup() {
 	player.img.src = "images/Raiden.png";
 
 	waypoints = [
-	[12, 6], [6, 11], [6, 20], [6, 11], [12, 9], [18, 11], [19, 17], [18, 11]
+	[12, 7], [6, 11], [6, 20], [6, 11], [12, 9], [18, 11], [19, 17], [18, 11]
 	];
 
 	enemy = [
@@ -117,15 +117,23 @@ function setup() {
 	{direction: 0, x: 0, y: 0, velX: 0, velY: 0, fov: 90, sightRadius: 150}
 	];
 
+	var w;
 	var newWaypoints = waypoints.slice(0);
 	for (var i = 0; i < enemy.length; i++) {
-		var w = Math.floor(Math.random()*newWaypoints.length);
+		w = Math.floor(Math.random()*newWaypoints.length);
 
-			enemy[i].x = newWaypoints[w][0] * map.tsize;
-			enemy[i].y = newWaypoints[w][1] * map.tsize;
-			enemy[i].waypoint = w;
-			newWaypoints.splice(w, 1);
+		enemy[i].x = newWaypoints[w][0] * map.tsize;
+		enemy[i].y = newWaypoints[w][1] * map.tsize;
 
+		newWaypoints.splice(w, 1);
+
+		enemy[i].waypoint = w + i;
+
+		if (enemy[i].waypoint + 1 == newWaypoints.length) { 
+			w = 0;
+		} else {
+			w++;
+		}
 	}
 
 	//Define entrance and exit areas
@@ -310,8 +318,8 @@ function movePlayer() {
 	player.velY *= friction;
 
 	//Add velocity to player position
-	player.velX = Math.round(player.velX * 100) / 100;
-	player.velY = Math.round(player.velY * 100) / 100;
+	player.velX = player.velX;
+	player.velY = player.velY;
 
 	//Calculate new player coordinate based on velocity
 	var newX = player.x + player.velX;
@@ -401,44 +409,6 @@ function drawPoint() {
 	context2.fillStyle = "black";
 	context3.fillRect(x, y, 5, 5); 
 
-}
-
-
-function detectWallCollisions(x, y) {
-	for (var c = 0; c < map.cols; c++) {
-		for (var r = 0; r < map.rows; r++) {
-
-			var tile = map.getTile(c, r);
-
-			if (tile > 2) {
-				if (intersects(x, y, c, r)) {
-					return true;
-				}
-			}
-
-		}
-	}
-}
-
-
-function intersects(x, y, c, r) {
-		var tileSize = map.tsize;
-		var tileCenterX = (tileSize * c) + (tileSize / 2);
-		var tileCenterY = (tileSize * r) + (tileSize / 2);
-
-	    var playerDistanceX = Math.abs(x - tileCenterX);
-	    var playerDistanceY = Math.abs(y - tileCenterY);
-
-	    if (playerDistanceX > (tileSize/2 + player.size)) { return false; }
-	    if (playerDistanceY > (tileSize/2 + player.size)) { return false; }
-
-	    if (playerDistanceX <= (tileSize/2)) { return true; } 
-	    if (playerDistanceY <= (tileSize/2)) { return true; }
-
-	    var cornerDistance_sq = (playerDistanceX - tileSize/2)^2 +
-	                         (playerDistanceY - tileSize/2)^2;
-
-	    return (cornerDistance_sq <= (player.size^2));
 }
 
 
@@ -534,10 +504,12 @@ function drawPlayer() {
 
 
 function moveEnemies() {
+	var w;
 	for (var i = 0; i < enemy.length; i++) {
 
-		var w = [enemy[i].waypoint];
+		w = enemy[i].waypoint;
 
+		//Distance from waypoint
 		enemy[i].dx = (waypoints[w][0] * map.tsize) - enemy[i].x;
 		enemy[i].dy = (waypoints[w][1] * map.tsize) - enemy[i].y;
 
@@ -546,27 +518,31 @@ function moveEnemies() {
 				enemy[i].waypoint = 0; 
 			} else {
 				enemy[i].waypoint++;
-				moveEnemies();
 			}
 		}
 
-		/* Waypoint lines
-		context2.beginPath();
-		context2.moveTo(enemy[i].x - player.x + (canvasWidth / 2), enemy[i].y - player.y + (canvasHeight / 2));
-		context2.lineTo(enemy[i].x - player.x + (canvasWidth / 2) + enemy[i].dx, enemy[i].y - player.y + (canvasHeight / 2) + enemy[i].dy);
-		context2.stroke();
-		*/
-
+		var newDirection;
+		
 		if (enemy[i].dy/enemy[i].dx) {
-			enemy[i].direction = Math.atan(enemy[i].dy/enemy[i].dx);
+			newDirection = Math.atan(enemy[i].dy/enemy[i].dx);
+		} else {
+			newDirection = 0;
 		}
 
 		//Enemy speed = 1.5
-		enemy[i].velX = Math.cos(enemy[i].direction) * 1.5;
-		enemy[i].velY = Math.sin(enemy[i].direction) * 1.5;
+		enemy[i].velX = Math.cos(newDirection) * 1.5;
+		enemy[i].velY = Math.sin(newDirection) * 1.5;
 
+		//Correct angle based on quadrant
 		if (enemy[i].dx < 0 || (enemy[i].dx < 0 && enemy[i].dy < 0)) {
-			enemy[i].direction += toRadians(180);	
+			newDirection += toRadians(180);	
+		}
+
+		var directionDifference = newDirection - enemy[i].direction;
+		if (directionDifference > 0.01) {
+			enemy[i].direction += 0.1 * Math.abs(directionDifference);
+		} else if (directionDifference < -0.01) {
+			enemy[i].direction -= 0.1 * Math.abs(directionDifference);
 		}
 
 		if ((enemy[i].dx < 0 && enemy[i].dy > 0) || (enemy[i].dx < 0 && enemy[i].dy < 0)) {
@@ -643,6 +619,10 @@ function atExit () {
 
 function toRadians(deg) {
 	return deg * Math.PI / 180
+}
+
+function toDegrees(rad) {
+	return rad * 180 / Math.PI
 }
 
 
