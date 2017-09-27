@@ -206,7 +206,7 @@ function resizeWindow() {
 }
 
 function load() {
-	var tilenames = ["Entrance", "Exit", "Floor", "Wall_T", "Wall_TR", "Wall_R", "Wall_BR", "Wall_B", "Wall_BL", "Wall_L", "Wall_TL", "Wall_BLC", "Wall_TLC", "Wall_TRC", "Wall_BRC"];
+	var tilenames = ["Entrance", "Entrance", "Floor", "Wall_T", "Wall_TR", "Wall_R", "Wall_BR", "Wall_B", "Wall_BL", "Wall_L", "Wall_TL", "Wall_BLC", "Wall_TLC", "Wall_TRC", "Wall_BRC", "Box", "Pallet", "Pallet_Barrels", "Pallet_Barrels1", "Pallet_Box"];
 	var readyIndex = 0; 
 
 	for (var i = 0; i < tilenames.length; i++) {
@@ -238,18 +238,18 @@ function main() {
 
 	drawScene();
 	
-	drawPoint();
+	drawCursor();
 
 	drawPlayer();
 
 	drawEnemies();
 	
 	if (detectEnemyCollisions()) {
-		writeText("Mission Failed", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 15), "red", true); 
+		writeText("Mission Failed", 50, canvasWidth / 2, canvasHeight / 2, "red", true, "center"); 
 		gameOver = true;
 	}
 	if (atExit()) {
-		writeText("Mission Accomplished", 50, paddingLeft + (canvasWidth / 75), paddingTop + (canvasHeight / 15), "green", true); 
+		writeText("Mission Accomplished", 50, canvasWidth / 2, canvasHeight / 4, "green", true, "center"); 
 		gameOver = true;
 	}
 
@@ -358,21 +358,20 @@ function drawScene() {
 			var x = (c * map.tsize) - Math.round(player.x) + (canvasWidth / 2);
 			var y = (r * map.tsize) - Math.round(player.y) + (canvasHeight / 2);
 
-			if (tile > 1) {		
+			if (tile > -1) {		
 
 				context1.drawImage(tiles[tile], x, y);
 
-			} else if (tile > -1) {
-
-				context1.fillStyle = "#FF69B4";
-				context1.fillRect(x, y, map.tsize, map.tsize);
-
-			}
+			} 
 
 		}
 	}
 
-	if (paused) { writeText("Paused", 20, (canvasWidth / 2), (canvasHeight / 2), true); }
+	if (paused) {
+		context3.fillStyle = "rgba(103, 118, 119, 0.7)";
+		context3.fillRect(0, 0, canvasWidth, canvasHeight);
+		writeText("Paused", 50, canvasWidth / 2, canvasHeight / 2, "white", false, "center"); 
+	}
 
 	if (editor) {
 		context2.fillStyle = "grey";
@@ -383,7 +382,7 @@ function drawScene() {
 }
 
 
-function drawPoint() {
+function drawCursor() {
 
 	var x = mouseX;
 	var y = mouseY;
@@ -418,7 +417,7 @@ function detectWallCollisionsX(x, y) {
 			
 			var tile = map.getTile(c, r);
 
-			if (tile > 2) {
+			if (tile > 2 && tile != 16) {
 				
 				var tileTop = r * map.tsize;
 				var tileBottom = (r * map.tsize) + map.tsize;
@@ -458,7 +457,7 @@ function detectWallCollisionsY(x, y) {
 			
 			var tile = map.getTile(c, r);
 
-			if (tile > 2) {
+			if (tile > 2 && tile != 16) {
 				
 				var tileTop = r * map.tsize;
 				var tileBottom = (r * map.tsize) + map.tsize;
@@ -626,14 +625,16 @@ function toDegrees(rad) {
 }
 
 
-function writeText(txt, sze, x, y, colour, outline) {
+function writeText(txt, sze, x, y, colour, outline, align) {
 	context3.font = sze + "px tahoma";
+	if (!align) { align = "start"; }
 	if (!colour) { colour = "#FFFFFF"; }
+	context3.textAlign = align;
 	context3.fillStyle = colour;
 	context3.fillText(txt, x, y);
 
 	if (outline) { 
-		context3.lineWidth = 1;
+		context3.lineWidth = 2;
 		context3.strokeStyle = "#000000";
 		context3.strokeText(txt, x, y); 
 	}
@@ -656,16 +657,16 @@ var map = {
 	-1, -1, -1, -1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, -1, -1, -1, -1, 
 	-1, -1, -1, -1, 9, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, -1, -1, -1, -1, 
 	10, 3, 3, 3, 14, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 11, 3, 3, 3, 4,
-	9, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5,
-	9, 2, 2, 2, 2, 2, 2, 2, 12, 7, 7, 7, 7, 7, 7, 13, 2, 2, 2, 2, 2, 2, 2, 5,
-	8, 13, 2, 2, 2, 2, 2, 2, 5, 10, 3, 3, 3, 3, 4, 9, 2, 2, 2, 2, 2, 2, 12, 6,
-	10, 14, 2, 2, 2, 2, 2, 2, 5, 9, 12, 13, 12, 13, 5, 9, 2, 2, 2, 2, 2, 2, 11, 4,
-	9, 2, 2, 2, 2, 2, 2, 2, 12, 13, 11, 14, 11, 14, 12, 13, 2, 2, 2, 2, 2, 2, 2, 5,
-	9, 2, 2, 2, 2, 2, 2, 2, 11, 14, 2, 2, 2, 2, 11, 14, 2, 2, 2, 2, 2, 2, 2, 5,
-	9, 2, 2, 2, 2, 2, 2, 2, 12, 13, 2, 2, 2, 2, 12, 13, 2, 2, 2, 2, 2, 2, 2, 5,
-	9, 2, 2, 2, 2, 2, 2, 2, 11, 14, 2, 2, 2, 2, 11, 14, 2, 2, 2, 2, 2, 2, 2, 5,
-	8, 13, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 12, 6,
-	10, 14, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 11, 4,
+	9, 15, 15, 15, 15, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5,
+	9, 15, 19, 19, 15, 2, 2, 2, 19, 19, 19, 19, 19, 19, 15, 15, 2, 2, 2, 2, 2, 2, 2, 5,
+	8, 13, 19, 19, 2, 2, 2, 2, 19, 19, 19, 19, 19, 19, 15, 15, 2, 2, 2, 2, 2, 2, 12, 6,
+	10, 14, 19, 19, 15, 2, 2, 2, 19, 19, 18, 18, 18, 17, 19, 19, 2, 2, 2, 2, 2, 2, 11, 4,
+	9, 15, 19, 19, 15, 2, 2, 2, 19, 19, 18, 16, 16, 17, 19, 19, 2, 2, 2, 2, 2, 2, 2, 5,
+	9, 15, 15, 15, 2, 2, 2, 2, 19, 19, 16, 16, 16, 16, 19, 19, 2, 2, 2, 2, 2, 2, 2, 5,
+	9, 15, 15, 15, 15, 2, 2, 2, 15, 15, 16, 16, 16, 16, 19, 19, 2, 2, 2, 2, 2, 2, 2, 5,
+	9, 19, 19, 19, 19, 2, 2, 2, 15, 15, 16, 16, 16, 16, 19, 19, 2, 2, 2, 2, 2, 2, 2, 5,
+	8, 13, 15, 15, 15, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 12, 6,
+	10, 14, 15, 15, 15, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 11, 4,
 	0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 12, 13, 12, 13, 5,
 	9, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 11, 14, 11, 14, 5,
 	9, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5,
