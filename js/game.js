@@ -610,7 +610,7 @@ function atExit () {
 		var playerLeft = player.x - player.size;
 		var playerRight = player.x + player.size;
 
-		if ((playerRight < exit.x2) && (playerLeft > exit.x1) && (playerBottom < exit.y2 - 5) && (playerTop > exit.y1 + 5)) {
+		if ((playerRight <= exit.x2) && (playerLeft >= exit.x1) && (playerBottom <= exit.y2 - 4) && (playerTop >= exit.y1 + 4)) {
 				return true;
 		}
 }
