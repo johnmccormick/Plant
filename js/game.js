@@ -106,7 +106,7 @@ function setup() {
 	player.direction = 0;
 
 	player.img = new Image();
-	player.img.src = "images/Raiden.png";
+	player.img.src = "images/Ryden.png";
 
 	waypoints = [
 	[12, 7], [6, 11], [6, 20], [6, 11], [12, 9], [18, 11], [19, 17], [18, 11]
